@@ -1,6 +1,10 @@
-weight          1.0
-counterweight   1.0
-arm             1.0
-sling           1.0
-lever           1.0
+weight          10.0
+counterweight   4000.0
+arm             4.0
+sling           3.0
+lever           0.5
+counterlength   2
+height          4.0
+angle           135.0
+timeStep        0.1
 

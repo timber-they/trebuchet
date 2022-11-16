@@ -4,8 +4,11 @@
 #include <errno.h>
 #include <math.h>
 
-#define TREBUCHET_VALUES 5
+// Trebuchet values to be parsed
+#define TREBUCHET_VALUES 9
 #define MAX_NAME_LENGTH 13
+#define PI 3.14159265
+#define G 9.81
 
 #define ERROR_PARSING 1
 
@@ -17,10 +20,21 @@ typedef struct
     double arm;
     double sling;
     double lever;
+    double counterlength;
+    double height;
+    double angle;
+    // Simulation values
+    double timeStep;
+    // Non-initial values
+    double angularVelocity;
+    double torque;
+    double momentOfInertia;
+    double weightAngle;
 } Trebuchet;
 
 int solve(FILE *in);
 Trebuchet parse(FILE *in);
+void print(Trebuchet trebuchet);
 
 int main()
 {
@@ -35,7 +49,40 @@ int main()
 int solve(FILE *in)
 {
     Trebuchet trebuchet = parse(in);
-    printf("Arm: %lf\n", trebuchet.arm);
+    print(trebuchet);
+
+    while (trebuchet.angle < 180.0)
+    {
+        // First some helpful values to be used
+        double armWeight = 
+            // Law of cosines
+            trebuchet.arm*trebuchet.arm +
+            trebuchet.sling*trebuchet.sling -
+            2*trebuchet.arm*trebuchet.sling *
+            cos(PI/180 * (
+                180 - trebuchet.angle + trebuchet.weightAngle));
+        double armCounterweight =
+            // Law of cosines
+            trebuchet.lever*trebuchet.lever +
+            trebuchet.counterlength*trebuchet.counterlength -
+            2*trebuchet.lever*trebuchet.counterlength *
+            cos(PI/180 * trebuchet.angle);
+
+        // Calculate moment of inertia
+        trebuchet.momentOfInertia =
+            // Weight
+            trebuchet.weight * armWeight +
+            // Counterweight
+            trebuchet.counterweight * armCounterweight;
+
+        // Calculate torque
+        double gravitationalForceWeight = trebuchet.weight * G
+        double gravitationalForceCounterweight = trebuchet.counterweight * G;
+        double angularForceCounterWeight =
+            cos(PI/180 * (180-trebuchet.angle)) *
+            gravitationalForceCounterweight;
+    }
+
     return -1;
 }
 
@@ -62,6 +109,14 @@ Trebuchet parse(FILE *in)
             res.sling = value;
         else if (!strcmp(name, "lever"))
             res.lever = value;
+        else if (!strcmp(name, "counterlength"))
+            res.counterlength = value;
+        else if (!strcmp(name, "height"))
+            res.height = value;
+        else if (!strcmp(name, "angle"))
+            res.angle = value;
+        else if (!strcmp(name, "timeStep"))
+            res.timeStep = value;
         else
         {
             fprintf(stderr, "Couldn't parse option '%s'\n", name);
@@ -71,5 +126,20 @@ Trebuchet parse(FILE *in)
     }
     free(name);
     return res;
+}
+
+void print(Trebuchet trebuchet)
+{
+    printf("Weight: %lf\n", trebuchet.weight);
+    printf("Counterweight: %lf\n", trebuchet.counterweight);
+    printf("Arm: %lf\n", trebuchet.arm);
+    printf("Sling: %lf\n", trebuchet.sling);
+    printf("Lever: %lf\n", trebuchet.lever);
+    printf("Counterlength: %lf\n", trebuchet.counterlength);
+    printf("Height: %lf\n", trebuchet.height);
+    printf("Angle: %lf\n", trebuchet.angle);
+    printf("Angular velocity: %lf\n", trebuchet.angularVelocity);
+    printf("Torque: %lf\n", trebuchet.torque);
+    printf("Moment of inertia: %lf\n", trebuchet.momentOfInertia);
 }
 
